@@ -1,4 +1,4 @@
-from dash import Dash, Input, Output, html, dcc, no_update
+from dash import Dash, Input, Output, html, dcc, no_update, ALL
 import dash_bootstrap_components as dbc
 
 import plotly.express as px
@@ -50,14 +50,13 @@ def _city_heading( transportation: Transportation ):
         html.H4( 'Supply plots', style={ 'text-align':'center' })
     ], style={ 'margin':'32px' } )
 
-def _city_content( transportation: Transportation, max_size ):
-    cards = []
-    disabled_items = [ i - 1 for i in range( max_size, 0, -1 ) ][ : ( max_size - len(transportation.city_requirements) ) ]
-    for i in range(max_size):
-        if i in disabled_items: card = dbc.Col([dbc.Card([dcc.Graph(id=f'energy-received-plot-{i}')], style={'display':'none'})], width=4)
-        else: card = dbc.Col([dbc.Card([dcc.Graph(id=f'energy-received-plot-{i}')])], width=4)
-        cards.append(card)
-    rows = [dbc.Row(cards[start:start + 3], style={'margin-top': '24px'}) for start in range(0, max_size, 3)]
+def _city_content( transportation: Transportation ):
+    cards = [ 
+        dbc.Col([ dbc.Card([ dcc.Graph(
+            id={ 'type': 'energy-received-plot', 'index': i }) 
+        ])], width=4) for i in range( len(transportation.city_requirements) ) 
+    ]
+    rows = [dbc.Row(cards[start:start + 3], style={'margin-top': '24px'}) for start in range(0, len(transportation.city_requirements), 3)]
     return html.Div(rows, style={'margin': '32px'})
 
 def _city_cost_plot( transportation: Transportation, template: str ):
@@ -73,13 +72,13 @@ def _city_cost_plot( transportation: Transportation, template: str ):
     return fig
 
 # /----------------| Cities page generator |----------------\
-def make_cities_page( transportation: Transportation, max_size: int = 36 ):
+def make_cities_page( transportation: Transportation ):
     return html.Div( [ 
         _city_heading( transportation ),
-        _city_content( transportation, max_size )
+        _city_content( transportation )
     ], id = 'city-plots' )
 
-def load_cities_callbacks( app: Dash, transportation: Transportation, template: str, max_size: int = 36 ):
+def load_cities_callbacks( app: Dash, transportation: Transportation, template: str ):
 
     # //----------------| City tab main plot |----------------\\
     @app.callback(
@@ -92,7 +91,7 @@ def load_cities_callbacks( app: Dash, transportation: Transportation, template: 
 
     # //----------------| City tab plots |----------------\\
     @app.callback(
-        [ Output( f'energy-received-plot-{i}', 'figure' ) for i in range( max_size ) ],
+        Output( {'type':'energy-received-plot', 'index':ALL }, 'figure' ),
         [ Input('url', 'pathname') ]
     )
     def gen_energy_received_plot( pathname ):
@@ -108,6 +107,5 @@ def load_cities_callbacks( app: Dash, transportation: Transportation, template: 
             ]
             for fig in figures:
                 fig.update_layout( font = { 'family': 'Nunito Sans', 'color': 'black' })
-            figures += [ no_update for _ in range( max_size, 0, -1 ) ][ : ( max_size - len(transportation.city_requirements) ) ]
             return figures
         return no_update

@@ -3,8 +3,9 @@ import base64
 import tempfile
 
 from pandas import read_csv, read_excel, Series, DataFrame
-from pulp import LpProblem, LpMinimize, LpVariable, LpContinuous, value
+from pulp import LpProblem, LpMinimize, LpVariable, LpContinuous, value, PULP_CBC_CMD
 from numpy import ones, array, sum, argmax, argmin
+import math
 from dash import html
 import dash_bootstrap_components as dbc
 
@@ -17,14 +18,6 @@ class Transportation:
         self.city_requirements = city_requirements
         self.problem, self.kwh, self.supply = None, None, None
         self.solve()
-
-    def set_city( self, name: str, idx: int ):
-        self.costs.columns[ idx ] = name
-        self.city_requirements.index[ idx ] = name
-
-    def set_plants( self, name: str, idx: int ):
-        self.costs.index[ idx ] = name
-        self.plant_supply.index[ idx ] = name
 
     def get_from_file( self, file_path: str ):
         format = file_path.split('.')[-1]
@@ -53,11 +46,14 @@ class Transportation:
     
     def add( self, axis: int = 0 ):
         if axis:
-            self.costs.loc[ : , self.costs.shape[1] + 1 ] = ones( self.costs.shape[0] )
-            self.city_requirements.loc[  self.costs.shape[1] + 1 ] = 0
+            self.costs.loc[ : , f'City {self.costs.shape[1]+1}' ] = ones( self.costs.shape[0] )
+            self.city_requirements.loc[ f'City {self.city_requirements.shape[0]+1}' ] = 0
         else: 
-            self.costs.loc[ self.costs.shape[0] + 1, : ] = ones( self.costs.shape[1] )
-            self.plant_supply.loc[ self.costs.shape[0] + 1 ] = 0
+            self.costs.loc[ f'Plant {self.costs.shape[0]+1}', : ] = ones( self.costs.shape[1] )
+            self.plant_supply.loc[ f'Plant {self.plant_supply.shape[0]+1}' ] = 0
+        
+        print(self.city_requirements)
+        print(self.plant_supply)
     
     def to_html( self ):
         table_content = [
@@ -100,6 +96,7 @@ class Transportation:
         ], className='table primary')]
     
     def solve( self ):
+        
         costs = self.costs.copy().values
         city_requirements = self.city_requirements.copy().values
         plant_supply = self.plant_supply.copy().values
@@ -125,7 +122,7 @@ class Transportation:
         for i, supply in enumerate( supplies ):
           problem += supply >= city_requirements[ i ]
 
-        problem.solve()
+        problem.solve( PULP_CBC_CMD(msg=False) )
         problem.objective.value()
 
         self.problem = problem
@@ -183,6 +180,16 @@ def calculate_energy_sent( supply: array, max_supply: array ):
 
 def calculate_energy_received( supply: array, req_supply: array ):
     return ((supply / req_supply) * 100 ).T
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = R * c
+    return distance
 
 # Init data
 costs = DataFrame( 

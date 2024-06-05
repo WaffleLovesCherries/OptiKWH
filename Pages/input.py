@@ -124,7 +124,7 @@ def load_input_callbacks( app: Dash, transportation: Transportation, max_size: i
         return transportation.to_html()
     
     # //----------------| Table value updater |----------------\\
-    @app.callback( 
+    @app.callback(
         [
             Input({'type': 'costs-cell', 'index': ALL}, 'value'),
             Input({'type': 'city-cell', 'index': ALL}, 'value'),

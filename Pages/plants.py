@@ -1,4 +1,4 @@
-from dash import Dash, Input, Output, html, dcc, no_update
+from dash import Dash, Input, Output, html, dcc, no_update, ALL
 import dash_bootstrap_components as dbc
 
 import plotly.express as px
@@ -50,14 +50,14 @@ def _plant_heading( transportation: Transportation ):
         html.H4( 'Supply plots', style={ 'text-align':'center' })
     ], style={ 'margin':'32px' } )
 
-def _plant_content( transportation: Transportation, max_size ):
-    cards = []
-    disabled_items = [ i - 1 for i in range( max_size, 0, -1 ) ][ : ( max_size - len(transportation.plant_supply) ) ]
-    for i in range(max_size):
-        if i in disabled_items: card = dbc.Col([dbc.Card([dcc.Graph(id=f'energy-sent-plot-{i}')], style={'display':'none'})], width=4)
-        else: card = dbc.Col([dbc.Card([dcc.Graph(id=f'energy-sent-plot-{i}')])], width=4)
-        cards.append(card)
-    rows = [dbc.Row(cards[start:start + 3], style={'margin-top': '24px'}) for start in range(0, max_size, 3)]
+def _plant_content( transportation: Transportation ):
+
+    cards = [ 
+        dbc.Col([ dbc.Card([ dcc.Graph(
+            id={ 'type': 'energy-sent-plot', 'index': i }) 
+        ])], width=4) for i in range( len(transportation.plant_supply) ) 
+    ]
+    rows = [dbc.Row(cards[start:start + 3], style={'margin-top': '24px'}) for start in range(0, len(transportation.plant_supply), 3)]
     return html.Div(rows, style={'margin': '32px'})
     
 def _plant_supply_plot( transportation: Transportation, template: str ):
@@ -73,13 +73,13 @@ def _plant_supply_plot( transportation: Transportation, template: str ):
     return fig
 
 # /----------------| Plants page generator |----------------\
-def make_plants_page( transportation: Transportation, max_size: int = 36 ):
+def make_plants_page( transportation: Transportation ):
     return html.Div( [ 
         _plant_heading( transportation ),
-        _plant_content( transportation, max_size )
+        _plant_content( transportation )
     ], id = 'plant-plots' )
 
-def load_plants_callbacks( app: Dash, transportation: Transportation, template: str, max_size: int = 36 ):
+def load_plants_callbacks( app: Dash, transportation: Transportation, template: str ):
 
     # //----------------| Plant tab main plot |----------------\\
     @app.callback(
@@ -92,7 +92,7 @@ def load_plants_callbacks( app: Dash, transportation: Transportation, template: 
 
     # //----------------| Plant tab plots |----------------\\
     @app.callback(
-        [ Output( f'energy-sent-plot-{i}', 'figure' ) for i in range( max_size ) ],
+        Output( {'type':'energy-sent-plot', 'index':ALL }, 'figure' ),
         [ Input('url', 'pathname') ]
     )
     def gen_energy_sent_plot( pathname ):
@@ -108,6 +108,5 @@ def load_plants_callbacks( app: Dash, transportation: Transportation, template: 
             ]
             for fig in figures:
                 fig.update_layout( font = { 'family': 'Nunito Sans', 'color': 'black' })
-            figures += [ no_update for _ in range( max_size, 0, -1 ) ][ : ( max_size - len(transportation.plant_supply) ) ]
             return figures
         else: return no_update

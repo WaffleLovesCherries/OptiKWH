@@ -2,7 +2,7 @@ from dash import Dash, Input, Output, html, dcc
 import dash_bootstrap_components as dbc
 from dash_bootstrap_templates import load_figure_template
 
-from utils import Transportation, Citybag, costs, plant_supply, city_requirements, CITIES
+from utils import Transportation, costs, plant_supply, city_requirements, CITIES
 from Pages.input import make_input_page, load_input_callbacks
 from Pages.cities import make_cities_page, load_cities_callbacks
 from Pages.plants import make_plants_page, load_plants_callbacks
@@ -11,10 +11,9 @@ from Pages.map import make_map_page, load_map_callbacks
 app = Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP])
 template = 'flatly'
 load_figure_template( [template] )
-max_size = 36
+max_size = 100
 
 transportation = Transportation(costs, plant_supply, city_requirements)
-citybag = Citybag( transportation )
 
 navbar = dbc.Navbar(
     dbc.Container(
@@ -52,17 +51,16 @@ app.layout = html.Div([
     Input('url', 'pathname')
 )
 def display_page(pathname):
-    if pathname == '/cities': return make_cities_page( transportation, max_size )
-    if pathname == '/plants': return make_plants_page( transportation, max_size )
-    elif pathname == '/map': return make_map_page( transportation, citybag )
-        
+    if pathname == '/cities': return make_cities_page( transportation )
+    if pathname == '/plants': return make_plants_page( transportation )
+    elif pathname == '/map': return make_map_page( transportation )
     else: return make_input_page( transportation )
 
 
 load_input_callbacks( app, transportation, max_size )
-load_cities_callbacks( app, transportation, template, max_size )
-load_plants_callbacks( app, transportation, template, max_size )
-load_map_callbacks( app, transportation, citybag, max_size )
+load_cities_callbacks( app, transportation, template )
+load_plants_callbacks( app, transportation, template )
+load_map_callbacks( app, transportation )
 
 if __name__ == '__main__':
     app.run_server(debug=True)
