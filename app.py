@@ -62,7 +62,7 @@ def display_page(pathname):
 load_input_callbacks( app, transportation, max_size )
 load_cities_callbacks( app, transportation, template, max_size )
 load_plants_callbacks( app, transportation, template, max_size )
-load_map_callbacks( app, transportation, citybag, template )
+load_map_callbacks( app, transportation, citybag, max_size )
 
 if __name__ == '__main__':
     app.run_server(debug=True)

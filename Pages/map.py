@@ -5,6 +5,19 @@ import plotly.graph_objects as go
 
 from utils import Transportation, Citybag, CITIES
 
+def _make_input_tab( cities: list, title: str ):
+    return dbc.Tab(
+        dbc.Card([ 
+            dbc.CardBody( 
+                dbc.Row([
+                    dbc.Col( html.P(city) ),
+                    dbc.Col( dbc.DropdownMenu([
+                        dbc.DropdownMenuItem( target ) for target in list(CITIES['city'])
+                    ], label='Choose city' ))
+                ])
+            ) for i, city in enumerate(cities) 
+        ], className="mt-3" ), label=title
+    )
 def make_map_page( transportation: Transportation, citybag: Citybag ):
     return html.Div([
         html.H2('Interactive map', style={ 'text-align':'center' }),
@@ -14,25 +27,15 @@ def make_map_page( transportation: Transportation, citybag: Citybag ):
                 dcc.Graph( id = 'globe', style={'height': '600px'} )
             ], width=8),
             dbc.Col([
-                html.Div( [ 
-                    dbc.Card([
-                        html.H4( 'Cities', style={ 'text-align':'center' } ),
-                        dbc.DropdownMenu( label='Choose target variable', style={'width': '100%', 'text-align':'center'}, className='w-100' ),
-                        dbc.DropdownMenu( label='Chose outcome city', style={'width': '100%', 'text-align':'center'}, className='w-100' )
-                    ], style={ 'padding':'24px' }),
-                    html.Hr(),
-                    dbc.Card([
-                        html.H4( 'Plants', style={ 'text-align':'center' } ),
-                        dbc.Row([
-                        dbc.DropdownMenu( label='Choose target variable', style={'width': '100%', 'text-align':'center'}, className='w-100' ),
-                        dbc.DropdownMenu( label='Chose outcome plant', style={'width': '100%', 'text-align':'center'}, className='w-100' )])
-                    ], style={ 'padding':'24px' }),
-                 ] )
+                dbc.Tabs([
+                    _make_input_tab([f'City {i}' for i in range(1,5)],'Cities'),
+                    _make_input_tab([f'Plant {i}' for i in range(1,4)],'Plants')
+                ])
             ], width=4)
         ])
     ], style={ 'margin':'24px' })
 
-def load_map_callbacks( app: Dash, transportation: Transportation, citybag: Citybag, template: str ):
+def load_map_callbacks( app: Dash, transportation: Transportation, citybag: Citybag, max_size: int ):
     @app.callback(
         Output('globe', 'figure'),
         [ Input('url', 'pathname') ]
@@ -54,7 +57,7 @@ def load_map_callbacks( app: Dash, transportation: Transportation, citybag: City
                         mode='markers',
                         marker=dict(size=10, color='red'),
                         text=name,
-                        name='Cities'
+                        name=name
                     ))
 
             # Add markers for each plant
@@ -70,7 +73,7 @@ def load_map_callbacks( app: Dash, transportation: Transportation, citybag: City
                         mode='markers',
                         marker=dict(size=10, color='blue'),
                         text=name,
-                        name='Plants'
+                        name=name
                     ))
 
             layout = go.Layout(
