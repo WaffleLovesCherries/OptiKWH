@@ -51,9 +51,6 @@ class Transportation:
         else: 
             self.costs.loc[ f'Plant {self.costs.shape[0]+1}', : ] = ones( self.costs.shape[1] )
             self.plant_supply.loc[ f'Plant {self.plant_supply.shape[0]+1}' ] = 0
-        
-        print(self.city_requirements)
-        print(self.plant_supply)
     
     def to_html( self ):
         table_content = [

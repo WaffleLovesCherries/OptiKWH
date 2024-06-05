@@ -63,4 +63,4 @@ load_plants_callbacks( app, transportation, template )
 load_map_callbacks( app, transportation )
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server()
